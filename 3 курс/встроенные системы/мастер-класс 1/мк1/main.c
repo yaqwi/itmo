@@ -8,7 +8,8 @@ char lastKey;
 uint32_t lastScanTime;
 uint8_t digitCount = 0;
 char enteredCode[5];
-const char code[] = "0123";
+char code[5] = "0123";
+char newCode[5];
 
 
 
@@ -33,31 +34,41 @@ void initGPIO() {
 
   // Настраиваем PA5 как выход
   GPIOA->MODER = (GPIOA->MODER & ~(3 << 10)) | (1 << 10);
-  GPIOA->OTYPER &= ~(1 << 5); // output type register
-  GPIOA->OSPEEDR |= (1 << 10); // output speed register
+  GPIOA->OTYPER &= ~(1 << 5); // output type register ставим в 0 - Push-Pull
+  GPIOA->OSPEEDR |= (1 << 10); // output speed register 
+  //тк в спид использ |= 11 бит не отчищается
+  // 01 - medium speed
 }
 
+// USART- для последовательнойпередачи данных
 void initUSART2() {
   // Включаем тактирование USART2
   RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
 
   // Настраиваем PA2 и PA3 в альтернативный режим
+  // меняем сразу с 4 по 7 бит (PA2 и PA3)
   GPIOA->MODER = (GPIOA->MODER & ~(0xF << 4)) | (0xA << 4);
+  //alternative function register (PA2 11:8, PA3 15:12)
   GPIOA->AFR[0] = (GPIOA->AFR[0] & ~(0xFF << 8)) | (1 << 8) | (1 << 12);
 
   // Настраиваем USART2
+  //BRR = Baud Rate Register - регистр скорости передачи данных
   USART2->BRR = 417; // 48MHz/115200
+  // CR1 = Control Register 1 - управляющий регистр USART
+  // TE = Transmitter Enable, UE = USART Enable
   USART2->CR1 = USART_CR1_TE | USART_CR1_UE;
 }
 
 void initSysTick() {
   SysTick->LOAD = 47999; // 1ms при 48MHz
   SysTick->VAL = 0;
+  //CTRL - Control and Status Register
   SysTick->CTRL = (1 << 2) | (1 << 1) | (1 << 0);
 }
 
 int _write(int file, uint8_t *ptr, int len) {
   for (int i = 0; i < len; i++) {
+    //TXE - Transmit Data Register Empty 
     while (!(USART2->ISR & USART_ISR_TXE));
     USART2->TDR = ptr[i];
   }

@@ -8,7 +8,10 @@ uint32_t block = 0;
 
 extern uint8_t digitCount;
 extern char enteredCode[5];
-extern const char code[];
+extern char code[];
+extern char newCode[5];
+
+uint8_t changeCodeStep = 0;
 
 
 void initKeyboard() {
@@ -100,6 +103,71 @@ void checkCode() {
   }
 }
 
+
+void changeCode() {
+  if (changeCodeStep == 1) {
+    if (strcmp(enteredCode, code) == 0) {
+      printf("Current code is correct. Enter new code\n");
+
+      changeCodeStep = 2;
+
+      digitCount = 0;
+      enteredCode[0] = '\0';
+      tm1637_clear();
+    } else {
+      printf("Wrong current code :(\n");
+
+      changeCodeStep = 0;
+      startBlock = tickCount;
+
+      GPIOA->ODR &= ~(1 << 5);
+      GPIOA->ODR |= (1 << 15);
+
+      block = 1500;
+    }
+  }
+
+  else if (changeCodeStep == 2) {
+    strcpy(newCode, enteredCode);
+
+    printf("Enter new code again\n");
+
+    changeCodeStep = 3;
+
+    digitCount = 0;
+    enteredCode[0] = '\0';
+    tm1637_clear();
+  }
+
+  else if (changeCodeStep == 3) {
+    if (strcmp(enteredCode, newCode) == 0) {
+      strcpy(code, newCode);
+
+      printf("Code changed successfully!\n");
+
+      changeCodeStep = 0;
+      startBlock = tickCount;
+
+      GPIOA->ODR &= ~(1 << 5);
+      GPIOA->ODR |= (1 << 9);
+
+      block = 3000;
+    } else {
+      printf("Codes do not match :(\n");
+
+      changeCodeStep = 0;
+      startBlock = tickCount;
+
+      GPIOA->ODR &= ~(1 << 5);
+      GPIOA->ODR |= (1 << 15);
+
+      block = 1500;
+    }
+  }
+}
+
+
+
 void scanKeyboard() {
   if (block != 0) {
     if (tickCount - startBlock < block) {
@@ -122,7 +190,12 @@ void scanKeyboard() {
     char currentKey = readKey();
 
     if (currentKey != '\0' && currentKey != lastKey) {
-      if (currentKey >= '0' && currentKey <= '9') {
+      if (currentKey == '*' && digitCount == 0 && changeCodeStep == 0) {
+        changeCodeStep = 1;
+        printf("Change code: enter current code\n");
+      }
+
+      else if (currentKey >= '0' && currentKey <= '9') {
         if (digitCount < 4) {
           enteredCode[digitCount] = currentKey;
           digitCount++;
@@ -132,7 +205,11 @@ void scanKeyboard() {
           displayCode();
 
           if (digitCount == 4) {
-            checkCode();
+            if (changeCodeStep == 0) {
+              checkCode();
+            } else {
+              changeCode();
+            }
           }
         }
       }
