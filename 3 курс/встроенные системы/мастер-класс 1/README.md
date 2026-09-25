@@ -1,6 +1,7 @@
 # Мастер-класс 1
-
-![alt text](assets/cat-paws-paws.gif)
+<p align="center">
+  <img src="assets/cat-paws-paws.gif" width="500">
+</p>
 
 ## Задание для получения варианта
 
@@ -16,4 +17,6 @@ https://wokwi.com/projects/441510423071853569
 
 Разработать систему управления доступом с использованием 4-разрядного семисегментного индикатора, мембранной клавиатуры и светодиодов для имитации процесса ввода кода из 4-ёх цифр.
 
-![alt text](assets/image.png)
+<p align="center">
+  <img src="assets/image.png" width="400">
+</p>
